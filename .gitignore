@@ -1,0 +1,33 @@
+# Build directories
+build/
+cmake-build-*/
+*.dSYM/
+
+# Compiled files
+*.o
+*.out
+*.exe
+user_service
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE files
+.vscode/
+.idea/
+*.xcodeproj/
+
+# Mac specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backup files
+*~
+*.swp
+*.bak
+
+# additional files
+*.pages
