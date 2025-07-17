@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ↑ "C++14 is mandatory, don't fall back to older versions"
 
+# Add debug flags
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g adds debug symbols, -O0 disables optimization
+
 include_directories(include)
 # ↑ "Look for header files in the 'include' folder"
 # This is where we put httplib.h and json.hpp
