@@ -110,15 +110,17 @@ class Database {
         }
 
         // bind values for column data
-        rc = sqlite3_bind_text(lPreparedStmt, 1, pUsername.c_str(), -1, SQLITE_STATIC);
+        rc = sqlite3_bind_text(lPreparedStmt, 1, pUsername.c_str(), -1, SQLITE_TRANSIENT);
         if(rc != SQLITE_OK){
             throw runtime_error("createUser: Error while binding data to prepared statement");
         }
-        rc = sqlite3_bind_text(lPreparedStmt, 2, pEmailId.c_str(), -1, SQLITE_STATIC);
+        rc = sqlite3_bind_text(lPreparedStmt, 2, pEmailId.c_str(), -1, SQLITE_TRANSIENT);
         if(rc != SQLITE_OK){
             throw runtime_error("createUser: Error while binding data to prepared statement");
         }
-        rc = sqlite3_bind_text(lPreparedStmt, 3, pPassword.c_str(), -1, SQLITE_STATIC);
+        
+        // TODO: Hash password before storing (use bcrypt or argon2)
+        rc = sqlite3_bind_text(lPreparedStmt, 3, pPassword.c_str(), -1, SQLITE_TRANSIENT);
         if(rc != SQLITE_OK){
             throw runtime_error("createUser: Error while binding data to prepared statement");
         }
@@ -127,12 +129,12 @@ class Database {
         if(rc != SQLITE_DONE){
             sqlite3_finalize(lPreparedStmt);
             // error condition
-            // if(rc == SQLITE_CONSTRAINT){
-            //     throw runtime_error("Entered Email Id is already registered.");
-            // }
-            // else{
+            if(rc == SQLITE_CONSTRAINT){
+                throw runtime_error("Entered Email Id is already registered.");
+            }
+            else{
                 throw runtime_error("Error while INSERT: " + string(sqlite3_errmsg(mDB)));
-            // }
+            }
         }
 
         sqlite3_finalize(lPreparedStmt);   // Destroys the prepared statement. 
@@ -156,38 +158,30 @@ class Database {
             throw runtime_error("getUser: Error while binding data to prepared statement");
         }
 
-        json lJsonArr = json::array(); // creates a json array
+        json lUserData = json::object(); // creates a json array
         rc = sqlite3_step(lPreparedStmt);
-        while(rc == SQLITE_ROW){
+        if(rc == SQLITE_ROW){
             int lId = sqlite3_column_int(lPreparedStmt, 0);
             string lUsername = string((const char*)sqlite3_column_text(lPreparedStmt, 1));
             string lEmailId = string((const char*)sqlite3_column_text(lPreparedStmt, 2));
             string lPassword = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
             string lCreateDate = string((const char*)sqlite3_column_text(lPreparedStmt, 4));
 
-            json lUserJson = {{"id", lId}, {"username", lUsername}, {"emailid", lEmailId}};
-            lJsonArr.push_back(lUserJson);
-
-            rc = sqlite3_step(lPreparedStmt);
+            lUserData = {{"id", lId}, {"username", lUsername}, {"emailid", lEmailId}};
         }
-
-        if(rc != SQLITE_DONE){
+        else {
             sqlite3_finalize(lPreparedStmt);
-            throw runtime_error("ERROR while getting User data: " + string(sqlite3_errmsg(mDB)));
+            throw runtime_error("ERROR: No User data found for id: " + to_string(pUserId)); //string(sqlite3_errmsg(mDB)));
         }
 
         sqlite3_finalize(lPreparedStmt);
 
-        if(lJsonArr.size() == 0){
-            throw runtime_error("User data not found for given user id.");
-        }
-
         json lRes;
         lRes["status"] = "SUCCESS";
         lRes["data"] = json::object(); // Create an empty nested object
-        lRes["data"]["id"] = lJsonArr[0]["id"];
-        lRes["data"]["username"] = lJsonArr[0]["username"];
-        lRes["data"]["emailid"] = lJsonArr[0]["emailid"];
+        lRes["data"]["id"] = lUserData["id"];
+        lRes["data"]["username"] = lUserData["username"];
+        lRes["data"]["emailid"] = lUserData["emailid"];
         return lRes;
     }
 };
