@@ -18,13 +18,21 @@ include_directories(include)
 # ↑ "Look for header files in the 'include' folder"
 # This is where we put httplib.h and json.hpp
 
-add_executable(user_service src/main.cpp)
+# Source files
+set(SOURCES
+    src/main.cpp
+    src/Database.cpp
+    # Add more source files as you create them
+)
+
+add_executable(user_service ${SOURCES})
 # ↑ "Create an executable called 'user_service' from main.cpp"
 
 target_link_libraries(user_service sqlite3 pthread)
 # ↑ "Link these libraries when building user_service"
 # sqlite3: For database operations
 # pthread: For threading support (required by httplib)
+
 
 # If you installed SQLite via Homebrew, uncomment these:
 include_directories(/opt/homebrew/opt/sqlite/include)
