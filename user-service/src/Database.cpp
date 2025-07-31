@@ -1,6 +1,7 @@
 #include "Database.h"
 // #include <exception>
 #include <stdexcept> // for invalid_argument, and other exceptions
+#include <regex>    // Required for regex functionality
 
 
 

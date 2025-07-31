@@ -8,8 +8,9 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include <sqlite3.h>
-#include <regex>    // Required for regex functionality
 
+// if a header file includes a using namespace directive or a using declaration at the global
+// scope, that effect will be propagated to any .cpp file(or other header file) that includes it.
 using namespace std;
 using json = nlohmann::json;
 

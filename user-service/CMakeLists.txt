@@ -22,6 +22,7 @@ include_directories(include)
 set(SOURCES
     src/main.cpp
     src/Database.cpp
+    src/UserService.cpp
     # Add more source files as you create them
 )
 
