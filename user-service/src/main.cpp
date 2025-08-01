@@ -2,6 +2,7 @@
 #include <httplib.h>
 #include <string>
 #include <memory>
+#include <ctime>
 #include "UserService.h"
 
 using namespace std;
@@ -16,7 +17,10 @@ int main(int argc, char* argv[]){
             throw invalid_argument("Usage: ./user_service <db_path> [port]");
         }
         string lDBPath(argv[1]); // first argument is always program's name
-        unique_ptr<UserService> lUserService = make_unique<UserService>(lDBPath);
+        time_t lCurrTime = time(0);
+
+        string lLogPath = "../logs/user_service_" + to_string(lCurrTime) + ".txt";
+        unique_ptr<UserService> lUserService = make_unique<UserService>(lDBPath, lLogPath);
 
         // create server to start listening
         int port = 8001;
@@ -25,8 +29,8 @@ int main(int argc, char* argv[]){
         }
         Server lServer;
         lUserService->setupRoutes(lServer);
-        lServer.listen("localhost", 8001);
         cout<<"User Service started on http://localhost:8001, press Ctrl+C to stop..."<<endl;
+        lServer.listen("localhost", 8001);
     }
     catch(const invalid_argument& e){
         cerr<<"Error: "<<e.what()<<endl;

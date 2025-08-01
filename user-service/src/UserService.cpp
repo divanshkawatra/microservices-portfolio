@@ -1,11 +1,14 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <functional>
 #include "UserService.h"
+#include "Logger.h"
 
 using json = nlohmann::json;
 
-UserService::UserService(const string& pDBPath){
+UserService::UserService(const string& pDBPath, string& pLogPath){
     mDatabaseObj = make_unique<Database>(pDBPath);
+    mLogger = FileLogger::getInstance(pLogPath);
 }
 
 void UserService::setupRoutes(Server& pServer){
@@ -26,6 +29,11 @@ void UserService::setupRoutes(Server& pServer){
     // )  → End capture group
     pServer.Get(R"(/users/(\d+))", [this](const Request& req, Response& res){
         this->handleGetUser(req, res);
+    });
+
+    // Logging
+    pServer.set_logger([this](const Request& req, const Response& res){
+        this->logMessage(req, res);
     });
 }
 
@@ -128,4 +136,9 @@ void UserService::handleGetUser(const Request& req, Response& res){
         res.status = 500; // Internal Server Error
         res.set_content(lResJson.dump(4), "application/json");
     }
+}
+
+void UserService::logMessage(const Request& req, const Response& res){
+    string lLogMessage = req.method + " " + req.path + " - " + to_string(res.status);
+    mLogger->log(lLogMessage, LOG_LEVEL::INFO);
 }

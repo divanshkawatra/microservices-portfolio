@@ -23,6 +23,7 @@ set(SOURCES
     src/main.cpp
     src/Database.cpp
     src/UserService.cpp
+    src/Logger.cpp
     # Add more source files as you create them
 )
 

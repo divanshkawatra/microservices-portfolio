@@ -1,8 +1,8 @@
 
 // Database.h
 // Header Guards/Include Guard
-#ifndef DATABASE_H.  // Conditional block start: "If NOT defined DATABASE_H"
-#define DATABASE_H.  // Define DATABASE_H
+#ifndef DATABASE_H  // Conditional block start: "If NOT defined DATABASE_H"
+#define DATABASE_H  // Define DATABASE_H
 
 #include <iostream>
 #include <string>
@@ -42,4 +42,4 @@ class Database {
     bool isValidEmail(const string& pEmailId);
 };
 
-#endif.   // End of the Conditional Block
+#endif   // End of the Conditional Block
