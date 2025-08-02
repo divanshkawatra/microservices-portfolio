@@ -1,6 +1,4 @@
 #include <iostream>
-#include <string>
-#include <fstream>
 #include <stdexcept>
 #include <ctime>
 #include "Logger.h"
@@ -16,9 +14,9 @@ ILogger::~ILogger(){
 
 string ILogger::LogLevelToString(LOG_LEVEL pLogLevel){
     switch(pLogLevel){
-        case INFO: return "INFO";
-        case WARNING: return "WARNING";
         case ERROR: return "ERROR";
+        case WARNING: return "WARNING";
+        case INFO: return "INFO";
         case DEBUG: return "DEBUG";
         default: return "INFO";
     }
@@ -56,7 +54,7 @@ void FileLogger::setLogLevel(LOG_LEVEL pLogLevel){
 }
 
 // log() to log message
-void FileLogger::log(string& pLogMsg, LOG_LEVEL pLogLevel){
+void FileLogger::log(const string& pLogMsg, LOG_LEVEL pLogLevel){
     if(pLogLevel <= mLogLevel){
         // Get the current calendar time as a time_t object
         time_t now = time(0); 
@@ -65,7 +63,7 @@ void FileLogger::log(string& pLogMsg, LOG_LEVEL pLogLevel){
         string date_time = string(ctime(&now));
         date_time.pop_back(); // remove new-line character(\n) inserted by ctime()
     
-        // unique_lock<mutex> lock(mLoggerMtx);
+        lock_guard<mutex> lock(mFileMtx); // for thread safety
         string pLog = " [" + string(date_time) + "] [" + LogLevelToString(pLogLevel) + "]: " + pLogMsg;
         // mLogFile<<string(date_time)<<" ["<<LogLevelToString(pLogLevel)<<"]: "<<pLogMsg<<endl;
         mLogFile << pLog.c_str() << endl;
