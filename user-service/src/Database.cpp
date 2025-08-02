@@ -67,7 +67,7 @@ void Database::createTables(){
                                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP\
                                     )";
     char* errMsg = nullptr;
-    char* callbackData = "<data from exec()>";
+    // char* callbackData = "<data from exec()>";
     // int rc = sqlite3_exec(mDB, lCreateTableCommand.c_str(), executeQueryCallback, callbackData, &errMsg);
     // Callback is only needed for SELECT queries, no need here
     int rc = sqlite3_exec(mDB, lCreateTableCommand.c_str(), nullptr, nullptr, &errMsg);

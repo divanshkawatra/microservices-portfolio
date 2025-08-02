@@ -4,19 +4,21 @@ cmake_minimum_required(VERSION 3.10)
 project(UserService)
 # ↑ "This project is called UserService"
 
-set(CMAKE_CXX_STANDARD 14)
-# ↑ "Use C++14 features (like auto, lambdas, etc.)"
+set(CMAKE_CXX_STANDARD 17)
+# ↑ "Use C++17 features (like std::optional, std::string_view, etc.) (C++14 features like auto, lambdas, etc.)"
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# ↑ "C++14 is mandatory, don't fall back to older versions"
+# ↑ "C++17 is mandatory, don't fall back to older versions"
 
 # Add debug flags
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g adds debug symbols, -O0 disables optimization
 
+
+# --- Project Structure ---
+# Tell CMake where your header files are, so e.g. #include "Database.h" works
+# This is also where we put httplib.h and json.hpp
 include_directories(include)
-# ↑ "Look for header files in the 'include' folder"
-# This is where we put httplib.h and json.hpp
 
 # Source files
 set(SOURCES
@@ -27,15 +29,27 @@ set(SOURCES
     # Add more source files as you create them
 )
 
+# Define our executable and its source files - Create an executable called 'user_service' from mentioned source files
 add_executable(user_service ${SOURCES})
-# ↑ "Create an executable called 'user_service' from main.cpp"
 
-target_link_libraries(user_service sqlite3 pthread)
-# ↑ "Link these libraries when building user_service"
+
+# --- Find Dependencies ---
+# CMake will find the libraries on your system (works perfectly with Homebrew on macOS)
+# No more manual include_directories() needed
+find_package(SQLite3 REQUIRED)
+find_package(Threads REQUIRED)
+
+# --- Link Dependencies ---
+# Link against the "imported targets". This automatically adds include paths and library paths.
+# No more manual link_directories() or linking "sqlite3".
 # sqlite3: For database operations
 # pthread: For threading support (required by httplib)
+target_link_libraries(user_service PRIVATE
+    SQLite::SQLite3
+    Threads::Threads
+)
 
 
-# If you installed SQLite via Homebrew, uncomment these:
-include_directories(/opt/homebrew/opt/sqlite/include)
-link_directories(/opt/homebrew/opt/sqlite/lib)
+# This is added to make life easier in VSCode
+# It creates a compile_commands.json file for better IntelliSense
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
