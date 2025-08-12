@@ -7,8 +7,6 @@
 #include <memory>  // shared_ptr
 #include <mutex>
 
-using namespace std;
-
 enum LOG_LEVEL {
     ERROR,   // 0
     WARNING, // 1
@@ -19,22 +17,22 @@ enum LOG_LEVEL {
 class ILogger{
     public:
         virtual ~ILogger(); // virtual destructor - must for virtual inheritance
-        virtual void log(const string& pLogMessage, LOG_LEVEL pLogLevel) = 0;
-        string LogLevelToString(LOG_LEVEL pLogLevel);
+        virtual void log(const std::string& pLogMessage, LOG_LEVEL pLogLevel) = 0;
+        std::string LogLevelToString(LOG_LEVEL pLogLevel);
 };
 
 // Singleton FileLogger
 class FileLogger: public ILogger{
-    mutex mFileMtx;
-    ofstream mLogFile;
+    std::mutex mFileMtx;
+    std::ofstream mLogFile;
     LOG_LEVEL mLogLevel;
-    static shared_ptr<FileLogger> mInstance; // public - global point of access
+    static std::shared_ptr<FileLogger> mInstance; // public - global point of access
 
-    FileLogger(string& pLogFilePath);
+    FileLogger(std::string& pLogFilePath);
     public:
         ~FileLogger();
-        static shared_ptr<FileLogger> getInstance(string& pLogFilePath);
-        void log(const string& pLogMessage, LOG_LEVEL pLogLevel) override;
+        static std::shared_ptr<FileLogger> getInstance(std::string& pLogFilePath);
+        void log(const std::string& pLogMessage, LOG_LEVEL pLogLevel) override;
         void setLogLevel(LOG_LEVEL pLogLevel);
 };
 

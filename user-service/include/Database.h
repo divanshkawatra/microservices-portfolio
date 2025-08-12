@@ -6,19 +6,29 @@
 
 #include <iostream>
 #include <string>
-#include <nlohmann/json.hpp>
 #include <sqlite3.h>
+#include <optional> // C++17 feature - 
 
 // if a header file includes a using namespace directive or a using declaration at the global
 // scope, that effect will be propagated to any .cpp file(or other header file) that includes it.
-using namespace std;
-using json = nlohmann::json;
+// **remove the using namespace std; from the header file. This is a best practice to avoid 
+// polluting the namespace of any other file that includes it.
+// It's better to explicitly use std::string, std::optional, etc., in header files.
+// using namespace std;
+
+struct User {
+    int id;
+    std::string username;
+    std::string email;
+    // string password; // we don't want to load sensitive data into memory when it's not needed.
+    std::string created_at;
+};
 
 class Database {
     sqlite3* mDB;
 
     public:
-    Database(const string dbname);
+    Database(const std::string dbname);
 
     ~Database();
 
@@ -32,14 +42,14 @@ class Database {
     void createTables();
 
     // function to create user
-    int createUser(const string& pUsername, const string& pEmailId, const string& pPassword);
+    int createUser(const std::string& pUsername, const std::string& pEmailId, const std::string& pPassword);
 
     // function to get user
-    json getUser(int pUserId);
+    std::optional<User> getUserById(int pUserId);
 
     private:
     // function to validate email address format
-    bool isValidEmail(const string& pEmailId);
+    bool isValidEmail(const std::string& pEmailId);
 };
 
 #endif   // End of the Conditional Block

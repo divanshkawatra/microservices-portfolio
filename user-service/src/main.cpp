@@ -4,28 +4,34 @@
 #include <memory>
 #include <ctime>
 #include "UserService.h"
+#include "Logger.h"
 
 using namespace std;
 using namespace httplib;
 
 using json = nlohmann::json;
 
-
 int main(int argc, char* argv[]){
     try{
         if(argc < 2){
-            throw invalid_argument("Usage: ./user_service <db_path> [port]");
+            throw invalid_argument("Usage: ./user_service <db_path> [loglevel] [port]");
         }
         string lDBPath(argv[1]); // first argument is always program's name
         time_t lCurrTime = time(0);
 
         string lLogPath = "../logs/user_service_" + to_string(lCurrTime) + ".txt";
         unique_ptr<UserService> lUserService = make_unique<UserService>(lDBPath, lLogPath);
+        shared_ptr<FileLogger> lLogger = FileLogger::getInstance(lLogPath);
 
+        LOG_LEVEL lLogLevel = LOG_LEVEL::ERROR;
+        if(argc == 3){
+            lLogLevel = (LOG_LEVEL)(stoi(argv[2]));
+            lLogger->setLogLevel(lLogLevel);
+        }
         // create server to start listening
         int port = 8001;
-        if(argc == 3){
-            port = stoi(argv[2]);
+        if(argc == 4){
+            port = stoi(argv[3]);
         }
         Server lServer;
         lUserService->setupRoutes(lServer);
@@ -42,3 +48,6 @@ int main(int argc, char* argv[]){
     }
     return 0;
 }
+
+
+// ./user_service ../data/user_db.db 2

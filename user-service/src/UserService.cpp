@@ -4,7 +4,18 @@
 #include "UserService.h"
 #include "Logger.h"
 
+using namespace std;
 using json = nlohmann::json;
+
+// **This function tells nlohmann::json how to convert our User struct into a JSON object.
+void to_json(json& pJson, const User& pUser){
+    pJson = json{
+        {"id", pUser.id},
+        {"username", pUser.username},
+        {"email", pUser.email},
+        {"created_at", pUser.created_at}
+    };
+}
 
 UserService::UserService(const string& pDBPath, string& pLogPath){
     mDatabaseObj = make_unique<Database>(pDBPath);
@@ -103,13 +114,22 @@ void UserService::handleGetUser(const Request& req, Response& res){
     // BUT NOT HERE
     try{
         int lUserId = stoi(req.matches[1]); // 1 because index start from 0: req.matches[0] = "/users/123"  (entire match)
-        json lUserData = mDatabaseObj->getUser(lUserId);
+        optional<User> lUserData = mDatabaseObj->getUserById(lUserId);
 
         json lResJson = json::object();
-        lResJson["status"] = "SUCCESS";
-        lResJson["data"] = lUserData.dump();
+        if(lUserData.has_value()){
+            lResJson["status"] = "SUCCESS";
+            res.status = 200;
 
-        res.status = 200;
+            json lUserJson = *lUserData;
+            lResJson["data"] = lUserJson;
+        }
+        else{
+            lResJson["status"] = "ERROR";
+            lResJson["message"] = "No User data found for given id.";
+            res.status = 404; // Missing Resource
+        }
+
         res.set_content(lResJson.dump(4), "application/json");
     }
     catch(const invalid_argument& e){
@@ -142,3 +162,5 @@ void UserService::logMessage(const Request& req, const Response& res){
     string lLogMessage = req.method + " " + req.path + " - " + to_string(res.status);
     mLogger->log(lLogMessage, LOG_LEVEL::INFO);
 }
+
+

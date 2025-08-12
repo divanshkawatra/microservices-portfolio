@@ -3,25 +3,7 @@
 #include <stdexcept> // for invalid_argument, and other exceptions
 #include <regex>    // Required for regex functionality
 
-
-
-// function to validate email address format
-bool Database::isValidEmail(const string& pEmailId){
-    // Regex pattern for "*@*.*" format
-        // - ^: Start of the string
-        // - [a-zA-Z0-9._%+-]+: One or more alphanumeric characters, '.', '_', '%', '+', or '-' 
-        //       - I am allowing only dot(.) and underscor(_)
-        // - @: The '@' symbol
-        // - [a-zA-Z0-9.-]+: One or more alphanumeric characters, '.', or '-' for the domain
-        // - \\.: A literal dot (escaped with double backslashes)
-        // - com: The "com" top-level domain OR [a-zA-Z]{2,}: Matches the Top-Level Domain (TLD) part. It requires at least two (and potentially more) letters.
-        // - $: End of the string
-    // const regex pattern("^[a-zA-z0-9._]+@[]+\\.com$");    // for *@*.com
-    const regex pattern("^[a-zA-z0-9._]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}$"); // for *@*.*
-
-    return regex_match(pEmailId, pattern);
-}
-
+using namespace std;
 
 Database::Database(const string dbname){
     cout<<"Database constructor called !"<<endl;
@@ -43,6 +25,7 @@ Database::~Database(){
     // Closes connection in destructor
     sqlite3_close(mDB);
 }
+
 
 // void *data: This is the user-defined data passed as the fourth argument to sqlite3_exec. In this example, it's a string "Callback function called".
 // int argc: The number of columns in the current row.
@@ -114,7 +97,7 @@ int Database::createUser(const string& pUsername, const string& pEmailId, const 
 
     rc = sqlite3_step(lPreparedStmt);
     if(rc != SQLITE_DONE){
-        sqlite3_finalize(lPreparedStmt);
+        sqlite3_finalize(lPreparedStmt);  // Destroys the prepared statement.
         // error condition
         if(rc == SQLITE_CONSTRAINT){
             throw runtime_error("Entered Email Id is already registered.");
@@ -133,41 +116,57 @@ int Database::createUser(const string& pUsername, const string& pEmailId, const 
 }
 
 // function to get user
-json Database::getUser(int pUserId){
-    string lQuery = "SELECT * FROM users WHERE id = ?";
+optional<User> Database::getUserById(int pUserId){
+    string lQuery = "SELECT id, username, email, created_at FROM users WHERE id = ?";
     sqlite3_stmt* lPreparedStmt;
-    int rc = sqlite3_prepare_v2(mDB, lQuery.c_str(), -1, &lPreparedStmt, nullptr);if(rc != SQLITE_OK){
+    int rc = sqlite3_prepare_v2(mDB, lQuery.c_str(), -1, &lPreparedStmt, nullptr);
+    if(rc != SQLITE_OK){
         throw runtime_error("Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
     }
 
     rc = sqlite3_bind_int(lPreparedStmt, 1, pUserId);
     if(rc != SQLITE_OK){
-        throw runtime_error("getUser: Error while binding data to prepared statement");
+        throw runtime_error("getUserById: Error while binding data to prepared statement");
     }
 
-    json lUserData = json::object(); // creates a json array
+    optional<User> lUserData = std::nullopt;
     rc = sqlite3_step(lPreparedStmt);
     if(rc == SQLITE_ROW){
         int lId = sqlite3_column_int(lPreparedStmt, 0);
         string lUsername = string((const char*)sqlite3_column_text(lPreparedStmt, 1));
         string lEmailId = string((const char*)sqlite3_column_text(lPreparedStmt, 2));
-        string lPassword = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
-        string lCreateDate = string((const char*)sqlite3_column_text(lPreparedStmt, 4));
+        // string lPassword = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
+        string lCreateDate = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
 
-        lUserData = {{"id", lId}, {"username", lUsername}, {"emailid", lEmailId}};
-    }
-    else {
-        sqlite3_finalize(lPreparedStmt);
-        throw runtime_error("ERROR: No User data found for id: " + to_string(pUserId)); //string(sqlite3_errmsg(mDB)));
+        User lUser;
+        lUser.id = lId;
+        lUser.username = lUsername;
+        lUser.email = lEmailId;
+        lUser.created_at = lCreateDate;
+
+        lUserData = lUser;
     }
 
     sqlite3_finalize(lPreparedStmt);
-
-    json lRes;
-    lRes["status"] = "SUCCESS";
-    lRes["data"] = json::object(); // Create an empty nested object
-    lRes["data"]["id"] = lUserData["id"];
-    lRes["data"]["username"] = lUserData["username"];
-    lRes["data"]["emailid"] = lUserData["emailid"];
-    return lRes;
+    return lUserData;
 }
+
+
+/////////////////// Helper Functions /////////////////////
+// function to validate email address format
+bool Database::isValidEmail(const string& pEmailId){
+    // Regex pattern for "*@*.*" format
+        // - ^: Start of the string
+        // - [a-zA-Z0-9._%+-]+: One or more alphanumeric characters, '.', '_', '%', '+', or '-' 
+        //       - I am allowing only dot(.) and underscor(_)
+        // - @: The '@' symbol
+        // - [a-zA-Z0-9.-]+: One or more alphanumeric characters, '.', or '-' for the domain
+        // - \\.: A literal dot (escaped with double backslashes)
+        // - com: The "com" top-level domain OR [a-zA-Z]{2,}: Matches the Top-Level Domain (TLD) part. It requires at least two (and potentially more) letters.
+        // - $: End of the string
+    // const regex pattern("^[a-zA-z0-9._]+@[]+\\.com$");    // for *@*.com
+    const regex pattern("^[a-zA-z0-9._]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}$"); // for *@*.*
+
+    return regex_match(pEmailId, pattern);
+}
+
