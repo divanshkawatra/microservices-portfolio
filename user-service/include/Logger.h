@@ -26,7 +26,8 @@ class FileLogger: public ILogger{
     std::mutex mFileMtx;
     std::ofstream mLogFile;
     LOG_LEVEL mLogLevel;
-    static std::shared_ptr<FileLogger> mInstance; // public - global point of access
+
+    static std::shared_ptr<FileLogger> mInstance; // private - global point of access
 
     FileLogger(std::string& pLogFilePath);
     public:
@@ -34,6 +35,8 @@ class FileLogger: public ILogger{
         static std::shared_ptr<FileLogger> getInstance(std::string& pLogFilePath);
         void log(const std::string& pLogMessage, LOG_LEVEL pLogLevel) override;
         void setLogLevel(LOG_LEVEL pLogLevel);
+
+        static std::mutex sObjMutex;
 };
 
 #endif

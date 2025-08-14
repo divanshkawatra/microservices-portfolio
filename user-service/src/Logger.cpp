@@ -7,6 +7,7 @@ using namespace std;
 
 // initialize static members
 shared_ptr<FileLogger> FileLogger::mInstance = nullptr;
+mutex FileLogger::sObjMutex;;
 
 ILogger::~ILogger(){
 
@@ -44,7 +45,11 @@ shared_ptr<FileLogger> FileLogger::getInstance(string& pLogFilePath){
     if(FileLogger::mInstance == nullptr){
         // FileLogger::mInstance =  make_shared<FileLogger>(pLogFilePath); // ***won't work because make_shared is a global function
                                                                             // it can't access private method of a class
-        FileLogger::mInstance =  shared_ptr<FileLogger>(new FileLogger(pLogFilePath));
+        // thread-safe initialization
+        lock_guard<mutex> lock(FileLogger::sObjMutex);
+        if(FileLogger::mInstance == nullptr){
+            FileLogger::mInstance =  shared_ptr<FileLogger>(new FileLogger(pLogFilePath));
+        }
     }
     return FileLogger::mInstance;
 }

@@ -29,14 +29,14 @@ int main(int argc, char* argv[]){
             lLogger->setLogLevel(lLogLevel);
         }
         // create server to start listening
-        int port = 8001;
+        int lPort = 8001;
         if(argc == 4){
-            port = stoi(argv[3]);
+            lPort = stoi(argv[3]);
         }
         Server lServer;
         lUserService->setupRoutes(lServer);
         cout<<"User Service started on http://localhost:8001, press Ctrl+C to stop..."<<endl;
-        lServer.listen("localhost", 8001);
+        lServer.listen("localhost", lPort);
     }
     catch(const invalid_argument& e){
         cerr<<"Error: "<<e.what()<<endl;

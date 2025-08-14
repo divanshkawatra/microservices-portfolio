@@ -63,6 +63,7 @@ void Database::createTables(){
     return;
 }
 
+
 // function to create user
 int Database::createUser(const string& pUsername, const string& pEmailId, const string& pPassword){
     // first validate few things
@@ -79,25 +80,30 @@ int Database::createUser(const string& pUsername, const string& pEmailId, const 
         throw runtime_error("Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
     }
 
+    // Using RAII - Wrapping PreparedStatement into an object that acquires the resource
+    // and guarantees destructor is called when it goes out of scope - so no need to explicitly call
+    // sqlite3_finalize()
+    // The moment a raw pointer is given to a smart pointer, consider the raw pointer invalid and 
+    // never use it again. Always interact with the resource through the smart pointer's interface (e.g., stmt.get()).
+    unique_ptr<sqlite3_stmt, Database::StmtDeleter> lStmt(lPreparedStmt);
+
     // bind values for column data
-    rc = sqlite3_bind_text(lPreparedStmt, 1, pUsername.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_bind_text(lStmt.get(), 1, pUsername.c_str(), -1, SQLITE_TRANSIENT);
     if(rc != SQLITE_OK){
         throw runtime_error("createUser: Error while binding data to prepared statement");
     }
-    rc = sqlite3_bind_text(lPreparedStmt, 2, pEmailId.c_str(), -1, SQLITE_TRANSIENT);
-    if(rc != SQLITE_OK){
-        throw runtime_error("createUser: Error while binding data to prepared statement");
-    }
-    
-    // TODO: Hash password before storing (use bcrypt or argon2)
-    rc = sqlite3_bind_text(lPreparedStmt, 3, pPassword.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_bind_text(lStmt.get(), 2, pEmailId.c_str(), -1, SQLITE_TRANSIENT);
     if(rc != SQLITE_OK){
         throw runtime_error("createUser: Error while binding data to prepared statement");
     }
 
-    rc = sqlite3_step(lPreparedStmt);
+    rc = sqlite3_bind_text(lStmt.get(), 3, pPassword.c_str(), -1, SQLITE_TRANSIENT);
+    if(rc != SQLITE_OK){
+        throw runtime_error("createUser: Error while binding data to prepared statement");
+    }
+
+    rc = sqlite3_step(lStmt.get());
     if(rc != SQLITE_DONE){
-        sqlite3_finalize(lPreparedStmt);  // Destroys the prepared statement.
         // error condition
         if(rc == SQLITE_CONSTRAINT){
             throw runtime_error("Entered Email Id is already registered.");
@@ -107,7 +113,8 @@ int Database::createUser(const string& pUsername, const string& pEmailId, const 
         }
     }
 
-    sqlite3_finalize(lPreparedStmt);   // Destroys the prepared statement. 
+    // No need of explicit call sqlite3_finalize(), unique_ptr with custom deleter will handle it
+    // sqlite3_finalize(lPreparedStmt);
 
     // get the user id of the last inserted user
     int lUserId = sqlite3_last_insert_rowid(mDB);
@@ -124,19 +131,22 @@ optional<User> Database::getUserById(int pUserId){
         throw runtime_error("Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
     }
 
-    rc = sqlite3_bind_int(lPreparedStmt, 1, pUserId);
+    unique_ptr<sqlite3_stmt, Database::StmtDeleter> lStmt(lPreparedStmt);
+
+    // Note: to access the raw pointer from a unique_ptr, you use the .get() method
+    rc = sqlite3_bind_int(lStmt.get(), 1, pUserId);
     if(rc != SQLITE_OK){
         throw runtime_error("getUserById: Error while binding data to prepared statement");
     }
 
     optional<User> lUserData = std::nullopt;
-    rc = sqlite3_step(lPreparedStmt);
+    rc = sqlite3_step(lStmt.get());
     if(rc == SQLITE_ROW){
-        int lId = sqlite3_column_int(lPreparedStmt, 0);
-        string lUsername = string((const char*)sqlite3_column_text(lPreparedStmt, 1));
-        string lEmailId = string((const char*)sqlite3_column_text(lPreparedStmt, 2));
-        // string lPassword = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
-        string lCreateDate = string((const char*)sqlite3_column_text(lPreparedStmt, 3));
+        int lId = sqlite3_column_int(lStmt.get(), 0);
+        string lUsername = string((const char*)sqlite3_column_text(lStmt.get(), 1));
+        string lEmailId = string((const char*)sqlite3_column_text(lStmt.get(), 2));
+        // string lPassword = string((const char*)sqlite3_column_text(lStmt.get(), 3));
+        string lCreateDate = string((const char*)sqlite3_column_text(lStmt.get(), 3));
 
         User lUser;
         lUser.id = lId;
@@ -147,7 +157,6 @@ optional<User> Database::getUserById(int pUserId){
         lUserData = lUser;
     }
 
-    sqlite3_finalize(lPreparedStmt);
     return lUserData;
 }
 
@@ -169,4 +178,3 @@ bool Database::isValidEmail(const string& pEmailId){
 
     return regex_match(pEmailId, pattern);
 }
-

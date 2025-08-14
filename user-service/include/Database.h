@@ -25,7 +25,17 @@ struct User {
 };
 
 class Database {
-    sqlite3* mDB;
+    private:
+        sqlite3* mDB;
+
+        // Deleter Functor (structure/class with overloaded operator())
+        struct StmtDeleter{
+            void operator()(sqlite3_stmt* stmt) const{
+                if(stmt) {
+                    sqlite3_finalize(stmt);
+                }
+            }
+        };
 
     public:
     Database(const std::string dbname);

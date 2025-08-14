@@ -18,19 +18,30 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g adds debug symbols, -O0 disables optim
 # --- Project Structure ---
 # Tell CMake where your header files are, so e.g. #include "Database.h" works
 # This is also where we put httplib.h and json.hpp
-include_directories(include)
+include_directories(
+    include                   # Your project's header directory
+    libs/argon2/include       # Argon2's public header directory
+)
 
-# Source files
-set(SOURCES
+# Define our executable and its source files - Create an executable called 'user_service' from mentioned source files
+add_executable(user_service
+    # Your project's source files
     src/main.cpp
     src/Database.cpp
     src/UserService.cpp
     src/Logger.cpp
+    src/PasswordService.cpp
     # Add more source files as you create them
-)
 
-# Define our executable and its source files - Create an executable called 'user_service' from mentioned source files
-add_executable(user_service ${SOURCES})
+    # --- Definitive list of required Argon2 source files ---
+    libs/argon2/src/argon2.c
+    libs/argon2/src/core.c
+    libs/argon2/src/encoding.c
+    libs/argon2/src/thread.c
+    libs/argon2/src/ref.c
+    # libs/argon2/src/opt.c  # For runtime CPU optimizations - compatible with intel processors only
+    libs/argon2/src/blake2/blake2b.c
+)
 
 
 # --- Find Dependencies ---
@@ -42,8 +53,8 @@ find_package(Threads REQUIRED)
 # --- Link Dependencies ---
 # Link against the "imported targets". This automatically adds include paths and library paths.
 # No more manual link_directories() or linking "sqlite3".
-# sqlite3: For database operations
-# pthread: For threading support (required by httplib)
+# SQLite3: For database operations
+# Threads: For threading support (required by httplib, Argon2)
 target_link_libraries(user_service PRIVATE
     SQLite::SQLite3
     Threads::Threads

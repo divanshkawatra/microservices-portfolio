@@ -3,6 +3,7 @@
 #include <functional>
 #include "UserService.h"
 #include "Logger.h"
+#include "PasswordService.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -20,6 +21,7 @@ void to_json(json& pJson, const User& pUser){
 UserService::UserService(const string& pDBPath, string& pLogPath){
     mDatabaseObj = make_unique<Database>(pDBPath);
     mLogger = FileLogger::getInstance(pLogPath);
+    mPasswordService = make_unique<PasswordService>();
 }
 
 void UserService::setupRoutes(Server& pServer){
@@ -74,8 +76,9 @@ void UserService::handleCreateUser(const Request& req, Response& res){
         string lUsername = lBodyJson["username"];
         string lEmailId = lBodyJson["email"];
         string lPassword = lBodyJson["password"];
+        string lHashedPassword = mPasswordService->hashPassword(lPassword);
 
-        int lUserId = mDatabaseObj->createUser(lUsername, lEmailId, lPassword);
+        int lUserId = mDatabaseObj->createUser(lUsername, lEmailId, lHashedPassword);
         json lResJson = {
             {"status", "SUCCESS"},
             {"data", to_string(lUserId)}

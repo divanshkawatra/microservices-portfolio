@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include "Database.h"
 #include "Logger.h"
+#include "PasswordService.h"
 
 using namespace httplib;
 using json = nlohmann::json;
@@ -13,6 +14,7 @@ using json = nlohmann::json;
 class UserService{
     std::unique_ptr<Database> mDatabaseObj;
     std::shared_ptr<ILogger> mLogger;
+    std::unique_ptr<PasswordService> mPasswordService;
 
     public:
         UserService(const std::string& pDbPath, std::string& pLogPath);
