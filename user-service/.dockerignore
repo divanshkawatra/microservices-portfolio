@@ -1,0 +1,13 @@
+# Exclude the build directory, as we create it inside the container
+build/
+
+# Exclude Git history
+.git/
+.gitignore
+
+# Exclude Docker files themselves
+Dockerfile
+.dockerignore
+
+# Exclude VSCode settings
+.vscode/

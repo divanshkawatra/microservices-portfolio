@@ -1,15 +1,15 @@
 #include "Database.h"
 // #include <exception>
-#include <stdexcept> // for invalid_argument, and other exceptions
-#include <regex>    // Required for regex functionality
+#include <stdexcept>  // for invalid_argument, and other exceptions
+#include <regex>      // Required for regex functionality
 
 using namespace std;
 
-Database::Database(const string dbname){
+Database::Database(const string pDBPath){
     cout<<"Database constructor called !"<<endl;
     
     // Opens SQLite connection in constructor
-    int rc = sqlite3_open(dbname.c_str(), &mDB);
+    int rc = sqlite3_open(pDBPath.c_str(), &mDB);
     if(rc != SQLITE_OK) {   // if(rc){
         // If we only output error, the program will continue to run; so better approach is to 
         // throw an error

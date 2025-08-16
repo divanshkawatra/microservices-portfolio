@@ -38,7 +38,7 @@ class Database {
         };
 
     public:
-    Database(const std::string dbname);
+    Database(const std::string dbname = "user_db.db");
 
     ~Database();
 
