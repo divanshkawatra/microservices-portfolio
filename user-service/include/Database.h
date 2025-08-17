@@ -24,6 +24,11 @@ struct User {
     std::string created_at;
 };
 
+struct UserCredentials {
+    int id;
+    std::string password;
+};
+
 class Database {
     private:
         sqlite3* mDB;
@@ -56,6 +61,7 @@ class Database {
 
     // function to get user
     std::optional<User> getUserById(int pUserId);
+    std::optional<UserCredentials> getUserCredentialsByEmail(const std::string& pEmail);
 
     private:
     // function to validate email address format

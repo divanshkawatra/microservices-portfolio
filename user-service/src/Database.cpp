@@ -128,7 +128,7 @@ optional<User> Database::getUserById(int pUserId){
     sqlite3_stmt* lPreparedStmt;
     int rc = sqlite3_prepare_v2(mDB, lQuery.c_str(), -1, &lPreparedStmt, nullptr);
     if(rc != SQLITE_OK){
-        throw runtime_error("Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
+        throw runtime_error("getUserById(): Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
     }
 
     unique_ptr<sqlite3_stmt, Database::StmtDeleter> lStmt(lPreparedStmt);
@@ -158,6 +158,38 @@ optional<User> Database::getUserById(int pUserId){
     }
 
     return lUserData;
+}
+
+std::optional<UserCredentials> Database::getUserCredentialsByEmail(const string& pEmail){
+    string lRawQuery = "SELECT id, password FROM users WHERE email = ?";
+    sqlite3_stmt* lPreparedStmt;
+    int rc = sqlite3_prepare_v2(mDB, lRawQuery.c_str(), -1, &lPreparedStmt, nullptr);
+    if(rc != SQLITE_OK){
+        throw runtime_error("getUserById(): Error while creating PreparedStatement: " + string(sqlite3_errmsg(mDB)));
+    }
+
+    unique_ptr<sqlite3_stmt, Database::StmtDeleter> lStmt(lPreparedStmt);
+
+    // Note: to access the raw pointer from a unique_ptr, you use the .get() method
+    rc = sqlite3_bind_text(lStmt.get(), 1, pEmail.c_str(), -1, SQLITE_TRANSIENT);
+    if(rc != SQLITE_OK){
+        throw runtime_error("getUserByEmail: Error while binding data to prepared statement");
+    }
+
+    optional<UserCredentials> lUserCredentials = std::nullopt;
+    rc = sqlite3_step(lStmt.get());
+    if(rc == SQLITE_ROW){
+        // lUserCredentials->id = sqlite3_column_int(lStmt.get(), 0);
+        // lUserCredentials->password = string(reinterpret_cast<const char*>(sqlite3_column_text(lStmt.get(), 1)));
+
+        UserCredentials lUser;
+        lUser.id = sqlite3_column_int(lStmt.get(), 0);
+        lUser.password = string(reinterpret_cast<const char*>(sqlite3_column_text(lStmt.get(), 1)));
+
+        lUserCredentials = lUser;
+    }
+
+    return lUserCredentials;
 }
 
 

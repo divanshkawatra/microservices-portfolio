@@ -25,6 +25,8 @@ class UserService{
         void handleHealthCall(const Request& req, Response& res);
         void handleCreateUser(const Request& req, Response& res);
         void handleGetUser(const Request& req, Response& res);
+        void handleUserLogin(const Request& req, Response& res);
+        
         void logMessage(const Request& req, const Response& res);
 
 };

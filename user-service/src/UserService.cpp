@@ -11,7 +11,7 @@ using json = nlohmann::json;
 // **This function tells nlohmann::json how to convert our User struct into a JSON object.
 void to_json(json& pJson, const User& pUser){
     pJson = json{
-        {"id", pUser.id},
+        {"userid", pUser.id},
         {"username", pUser.username},
         {"email", pUser.email},
         {"created_at", pUser.created_at}
@@ -42,6 +42,10 @@ void UserService::setupRoutes(Server& pServer){
     // )  → End capture group
     pServer.Get(R"(/users/(\d+))", [this](const Request& req, Response& res){
         this->handleGetUser(req, res);
+    });
+
+    pServer.Post("/login", [this](const Request& req, Response& res){
+        this->handleUserLogin(req, res);
     });
 
     // Logging
@@ -158,6 +162,59 @@ void UserService::handleGetUser(const Request& req, Response& res){
         };
         res.status = 500; // Internal Server Error
         res.set_content(lResJson.dump(4), "application/json");
+    }
+}
+
+void UserService::handleUserLogin(const Request& req, Response& res){
+    try{
+        json lBodyJson = json::parse(req.body);
+
+        if(!lBodyJson.contains("email") || !lBodyJson.contains("password")){
+            throw invalid_argument("EmailId and Password are mandatory.");
+        }
+
+        string lPassword = lBodyJson["password"];
+        string lEmailId = lBodyJson["email"];
+        // First find the user details with given emailId or username
+        optional<UserCredentials> lUserCredentials = mDatabaseObj->getUserCredentialsByEmail(lEmailId);
+
+        json lRes = json::object();
+        if(!lUserCredentials.has_value()){
+            lRes["status"] = "ERROR";
+            // Security Note: Don't say "User not found." A generic message is better
+            // to prevent attackers from guessing valid emails.
+            lRes["message"] = "Invalid EmailID or Password";
+            // NOT 404: Not Found as: A login attempt is an authentication concern. Responding
+            // with 401 for any authentication failure is the standard and correct approach.
+            res.status = 401; // Unauthorized
+            res.set_content(lRes.dump(), "application/json");
+            return;
+        }
+
+        int lUserId = lUserCredentials->id;
+        string lHashedPassword = lUserCredentials->password; // OR lUserCredentials.value().password;
+
+        bool lPasswordMatches = mPasswordService->verifyPassword(lPassword, lHashedPassword);
+        if(!lPasswordMatches){
+            lRes["status"] = "ERROR";
+            // Use the exact same generic message for both failures. This prevents "timing attacks"
+            // where an attacker could learn which emails are valid based on slightly different response
+            // messages or times.
+            lRes["message"] = "Invalid EmailID or Password";
+            res.status = 401; // Unauthorized
+        }
+        else{
+            lRes["status"] = "SUCCESS";
+            lRes["message"] = "Login successfull";
+            lRes["userid"] = lUserId;
+            res.status = 200; // Success
+
+        }
+        res.set_content(lRes.dump(), "application/json");
+
+    }
+    catch(exception& e){
+        cout<<"Error in handleUserLogin(): "<<e.what()<<endl;
     }
 }
 
