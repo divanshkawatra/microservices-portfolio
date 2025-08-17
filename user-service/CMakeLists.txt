@@ -21,6 +21,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # -g adds debug symbols, -O0 disables optim
 include_directories(
     include                   # Your project's header directory
     libs/argon2/include       # Argon2's public header directory
+    libs/jwt-cpp/include      # JWT public header directory
 )
 
 # Define our executable and its source files - Create an executable called 'user_service' from mentioned source files
@@ -49,6 +50,7 @@ add_executable(user_service
 # No more manual include_directories() needed
 find_package(SQLite3 REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # --- Link Dependencies ---
 # Link against the "imported targets". This automatically adds include paths and library paths.
@@ -58,6 +60,8 @@ find_package(Threads REQUIRED)
 target_link_libraries(user_service PRIVATE
     SQLite::SQLite3
     Threads::Threads
+    OpenSSL::Crypto
+    OpenSSL::SSL
 )
 
 

@@ -18,7 +18,8 @@ RUN apt-get update && \
     build-essential \
     cmake \
     libsqlite3-dev \
-    libpthread-stubs0-dev
+    libpthread-stubs0-dev \
+    libssl-dev
 
 # Copy our ENTIRE project directory into the image's /app directory.
 # The first '.' is our local project folder. The second '.' is the WORKDIR inside the image.
@@ -37,7 +38,7 @@ WORKDIR /app
 # Install ONLY the runtime dependencies. We don't need the compiler or cmake anymore.
 # We only need the SQLite library file itself.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends libsqlite3-0 && \
+    apt-get install -y --no-install-recommends libsqlite3-0 libssl3 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy ONLY the compiled executable from the 'builder' stage.
@@ -57,6 +58,10 @@ EXPOSE 8001
 # > Setting DOCKER_ENV environment variable, to know in the program that the program
 # running in Docker container - and changing config according to it, like IP address
 ENV DOCKER_ENV=TRUE
+
+# Add the secret key as an environment variable.
+# IMPORTANT: Use a long, complex, random string in a real project.
+ENV JWT_SECRET="a-very-long-and-super-secret-key-that-is-not-guessable"
 
 # The command to run when a container is started from this image.
 # We run our compiled service and tell it where to create the database.

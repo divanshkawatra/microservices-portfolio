@@ -15,9 +15,10 @@ class UserService{
     std::unique_ptr<Database> mDatabaseObj;
     std::shared_ptr<ILogger> mLogger;
     std::unique_ptr<PasswordService> mPasswordService;
+    std::string mJWTSecretStr;
 
     public:
-        UserService(const std::string& pDbPath, std::string& pLogPath);
+        UserService(const std::string& pDbPath, std::string& pLogPath, std::string& pJWTSecretStr);
         void setupRoutes(httplib::Server& pServer);
 
     private:

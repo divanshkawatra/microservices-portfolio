@@ -1,9 +1,13 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <chrono>
 #include "UserService.h"
 #include "Logger.h"
 #include "PasswordService.h"
+// jwt-cpp supports multiple JSON backends. Since we already use nlohmann::json, include its traits before jwt.h
+#include "jwt-cpp/traits/nlohmann-json/traits.h"
+#include "jwt-cpp/jwt.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -18,10 +22,11 @@ void to_json(json& pJson, const User& pUser){
     };
 }
 
-UserService::UserService(const string& pDBPath, string& pLogPath){
+UserService::UserService(const string& pDBPath, string& pLogPath, string& pJWTSecretStr){
     mDatabaseObj = make_unique<Database>(pDBPath);
     mLogger = FileLogger::getInstance(pLogPath);
     mPasswordService = make_unique<PasswordService>();
+    mJWTSecretStr = std::move(pJWTSecretStr);
 }
 
 void UserService::setupRoutes(Server& pServer){
@@ -202,18 +207,26 @@ void UserService::handleUserLogin(const Request& req, Response& res){
             // messages or times.
             lRes["message"] = "Invalid EmailID or Password";
             res.status = 401; // Unauthorized
+            res.set_content(lRes.dump(), "application/json");
+            return;
         }
-        else{
-            lRes["status"] = "SUCCESS";
-            lRes["message"] = "Login successfull";
-            lRes["userid"] = lUserId;
-            res.status = 200; // Success
 
-        }
+        // Generate the token using the jwt-cpp builder pattern
+        string lJWTToken = jwt::create()
+                           .set_issuer("user-service")
+                           .set_type("JWT")
+                           .set_payload_claim("userid", jwt::claim(to_string(lUserId)))
+                           .set_expires_at(std::chrono::system_clock::now() + std::chrono::hours{1})
+                           .sign(jwt::algorithm::hs256{mJWTSecretStr});
+
+        lRes["status"] = "SUCCESS";
+        lRes["message"] = "Login successfull";
+        lRes["userid"] = lUserId;
+        lRes["token"] = lJWTToken;
+        res.status = 200; // Success
         res.set_content(lRes.dump(), "application/json");
-
     }
-    catch(exception& e){
+    catch(const exception& e){
         cout<<"Error in handleUserLogin(): "<<e.what()<<endl;
     }
 }

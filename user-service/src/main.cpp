@@ -46,6 +46,12 @@ void createDirectoryStructure(string& pPath){
 
 int main(int argc, char* argv[]){
     try{
+        const char* lJWTSecretEnv = getenv("JWT_SECRET");
+        if(!lJWTSecretEnv){
+            throw runtime_error("JWT Secret string not set. Set JWT Secret string and run again");
+        }
+        string lJWTSecretStr(lJWTSecretEnv);
+
         if(argc < 2){
             throw invalid_argument("Usage: ./user_service <db_path> [loglevel] [port]");
         }
@@ -68,7 +74,7 @@ int main(int argc, char* argv[]){
         createDirectoryStructure(lDBPath);
         createDirectoryStructure(lLogPath);
 
-        unique_ptr<UserService> lUserService = make_unique<UserService>(lDBPath, lLogPath);
+        unique_ptr<UserService> lUserService = make_unique<UserService>(lDBPath, lLogPath, lJWTSecretStr);
         shared_ptr<FileLogger> lLogger = FileLogger::getInstance(lLogPath);
 
         LOG_LEVEL lLogLevel = LOG_LEVEL::ERROR;
